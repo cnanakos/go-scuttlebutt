@@ -1,11 +1,22 @@
 package scuttlebutt
 
 import (
+	"fmt"
 	"math/rand"
 	"sort"
 	"time"
 
 	"golang.org/x/exp/slices"
+)
+
+const (
+	maxKeySize   = 1024
+	maxValueSize = 4096
+)
+
+var (
+	errMaxKeySizeExceeded   = fmt.Errorf("max key size (%d) has been exceeded", maxKeySize)
+	errMaxValueSizeExceeded = fmt.Errorf("max value size (%d) has been exceeded", maxValueSize)
 )
 
 //Node represents a node in the cluster
@@ -45,14 +56,22 @@ func (ns *nodeState) getVersioned(key string) (*versionedValue, bool) {
 	return nil, false
 }
 
-func (ns *nodeState) set(key, value string) {
+func (ns *nodeState) set(key, value string) error {
 	newVersion := ns.maxVersion + 1
-	ns.setWithVersion(key, value, newVersion)
+	return ns.setWithVersion(key, value, newVersion)
 }
 
-func (ns *nodeState) setWithVersion(key, value string, valueVersion version) {
+func (ns *nodeState) setWithVersion(key, value string, valueVersion version) error {
+	if len(key) > maxKeySize {
+		return errMaxKeySizeExceeded
+	}
+
+	if len(value) > maxValueSize {
+		return errMaxValueSizeExceeded
+	}
 	ns.maxVersion = valueVersion
 	ns.KV[key] = versionedValue{Value: value, Version: valueVersion}
+	return nil
 }
 
 func (ns *nodeState) staleKeyValues(floorVersion version) map[string]versionedValue {

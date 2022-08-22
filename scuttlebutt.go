@@ -621,8 +621,7 @@ func (sb *Scuttlebutt) Join(seedNodes []string) error {
 func (sb *Scuttlebutt) Set(key, value string) error {
 	sb.mutex.Lock()
 	defer sb.mutex.Unlock()
-	sb.getSelfNodeState().set(key, value)
-	return nil
+	return sb.getSelfNodeState().set(key, value)
 }
 
 //State returns cluster state

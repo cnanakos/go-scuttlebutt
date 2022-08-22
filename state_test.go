@@ -2,6 +2,7 @@ package scuttlebutt
 
 import (
 	"fmt"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -283,4 +284,23 @@ func TestClusterStateRandomDigestAndDeltaLessThanMTU(t *testing.T) {
 		require.Nil(t, err)
 		require.LessOrEqual(t, len(buf), deltaMtu)
 	}
+}
+
+func TestMaxKeyValuePair(t *testing.T) {
+	clusterState := newClusterState()
+	node := Node{ID: fmt.Sprintf("%s/%d", getTestUUID(), time.Now().UnixNano()),
+		GossipPublicAddress: testListenAddr}
+	nodeState := clusterState.getNodeStateDefault(node)
+	err := nodeState.setWithVersion("key1", "1", 1)
+	require.Nil(t, err)
+
+	largeKey := make([]byte, 1025)
+	rand.Read(largeKey)
+	err = nodeState.setWithVersion(string(largeKey), "3", 3)
+	require.NotNil(t, err)
+
+	largeValue := make([]byte, 4097)
+	rand.Read(largeKey)
+	err = nodeState.setWithVersion("key2", string(largeValue), 3)
+	require.NotNil(t, err)
 }
